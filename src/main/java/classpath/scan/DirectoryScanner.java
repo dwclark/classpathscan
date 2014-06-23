@@ -26,23 +26,28 @@ public class DirectoryScanner extends ElementScanner {
     }
     
     private static String cleanResource(final File baseDirectory, final File classFile) {
-	String ret = classFile.getAbsolutePath().replace(baseDirectory.getAbsolutePath(), "");
-	if(ret.startsWith("/") || ret.startsWith(File.separator)) {
-	    ret = ret.substring(1);
+	try {
+	    String ret = classFile.getCanonicalPath().replace(baseDirectory.getCanonicalPath(), "");
+	    if(ret.startsWith("/") || ret.startsWith(File.separator)) {
+		ret = ret.substring(1);
+	    }
+	    
+	    if(!File.separator.equals("/")) {
+		ret = ret.replace(File.separator, "/");
+	    }
+	    
+	    return ret;
 	}
-	
-	if(!File.separator.equals("/")) {
-	    ret = ret.replace(File.separator, "/");
+	catch(java.io.IOException ioe) {
+	    throw new RuntimeException(ioe);
 	}
-	
-	return ret;
     }
     
     private static void process(final List<String> resources, final File baseDirectory, 
 				final File directory, final List<Pattern> patterns) {
 	for(File file : directory.listFiles()) {
 	    if(file.isFile()) {
-		String resourceName = cleanResource(baseDirectory, directory);
+		String resourceName = cleanResource(baseDirectory, file);
 		if(matchesAll(resourceName, patterns)) {
 		    resources.add(resourceName);
 		}

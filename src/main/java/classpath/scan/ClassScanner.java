@@ -123,10 +123,10 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
-    public Set<Class> findSubTypesOf(final Class type) {
+    public Set<Class> findSubTypesOf(final Class<?> type) {
 	return findMatches(new ClassMatcher<Class>() {
 		public Set<Class> matches(Class<?> found) {
-		    if(found != null && found.isInstance(type)) {
+		    if(found != null && type.isAssignableFrom(found)) {
 			return Collections.<Class>singleton(found);
 		    }
 		    else {

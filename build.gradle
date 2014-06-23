@@ -1,9 +1,15 @@
 apply plugin: 'java'
+apply plugin: 'groovy'
 
 dependencies {
   testCompile 'junit:junit:4.11'
+  testCompile 'org.codehaus.groovy:groovy:2.3.3'
 }
 
 tasks.withType(Compile) {
   options.compilerArgs << "-Xlint:unchecked"
+}
+
+repositories {
+  mavenCentral()
 }

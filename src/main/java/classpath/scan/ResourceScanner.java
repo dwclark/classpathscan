@@ -91,26 +91,25 @@ public class ResourceScanner {
 	this.scanners = Collections.unmodifiableList(findScanners(classLoader, new ArrayList<ElementScanner>()));
     }
 	
-    private List<ElementScanner> findScanners(ClassLoader classLoader, List<ElementScanner> result) {
+    private List<ElementScanner> findScanners(final ClassLoader classLoader, final List<ElementScanner> result) {
 	try {
 	    if(classLoader == null) {
 		return result;
 	    }
 	    
-	    ClassLoader current = classLoader;
-	    if(current instanceof URLClassLoader) {
+	    if(classLoader instanceof URLClassLoader) {
 		URL[] urls = ((URLClassLoader) classLoader).getURLs();
 		for(URL url : urls) {
 		    if(url.getProtocol().equals("file")) {
 			File asFile = new File(url.toURI());
 			if(asFile.isDirectory()) {
-			    DirectoryScanner scanner = DirectoryScanner.factory(current, asFile, prefixes, patterns);
+			    DirectoryScanner scanner = DirectoryScanner.factory(classLoader, asFile, prefixes, patterns);
 			    if(scanner != null) {
 				result.add(scanner);
 			    }
 			}
 			else if(asFile.getName().endsWith("jar")) {
-			    JarScanner scanner = JarScanner.factory(current, asFile, prefixes, patterns);
+			    JarScanner scanner = JarScanner.factory(classLoader, asFile, prefixes, patterns);
 			    if(scanner != null) {
 				result.add(scanner);
 			    }
@@ -118,12 +117,12 @@ public class ResourceScanner {
 		    }
 		}
 	    }
+
+	    return findScanners(classLoader.getParent(), result);
 	}
 	catch(URISyntaxException e) {
 	    throw new RuntimeException(e);
 	}
-	
-	return findScanners(classLoader.getParent(), result);
     }
 
     public Set<String> findMatches(final ResourceMatcher matcher) {
