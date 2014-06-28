@@ -6,27 +6,30 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
+import java.io.InputStream;
 
 public class JarScanner extends ElementScanner {
-    
-    private final List<String> resources;
 
-    public List<String> getResources() {
-	return resources;
+    private final JarFile jar;
+
+    public <T> T withStream(String resource, ProcessInputStream<T> processor) {
+	JarEntry entry = jar.getJarEntry(resource);
+	try(InputStream istream = jar.getInputStream(entry)) {
+	    return processor.process(istream);
+	}
+	catch(IOException ex) {
+	    throw new RuntimeException(ex);
+	}
     }
 
-    private final ClassLoader classLoader;
-
-    public ClassLoader getClassLoader() {
-	return classLoader;
-    }
-
-    public JarScanner(final ClassLoader classLoader, final List<String> resources) {
-	this.classLoader = classLoader;
-	this.resources = Collections.unmodifiableList(resources);
+    public JarScanner(final ClassLoader classLoader, final JarFile jar, final SortedSet<String> resources) {
+	super(classLoader, resources);
+	this.jar = jar;
     }
     
     private static boolean shouldProcess(final JarFile jar, final List<String> prefixes) {
@@ -35,7 +38,7 @@ public class JarScanner extends ElementScanner {
 	}
 
 	for(String prefix : prefixes) {
-	    JarEntry entry = (JarEntry) jar.getEntry(prefix);
+	    JarEntry entry = jar.getJarEntry(prefix);
 	    if(entry != null) {
 		return true;
 	    }
@@ -62,7 +65,7 @@ public class JarScanner extends ElementScanner {
 				     final List<String> prefixes, final List<Pattern> patterns) {
 	try {
 	    JarFile jar = new JarFile(jarFile);
-	    List<String> resources = new ArrayList<>();
+	    SortedSet<String> resources = new TreeSet<>();
 	    
 	    if(shouldProcess(jar, prefixes)) {
 		for(Enumeration<JarEntry> iter = jar.entries(); iter.hasMoreElements(); ) {
@@ -75,7 +78,7 @@ public class JarScanner extends ElementScanner {
 	    }
 	    
 	    if(!resources.isEmpty()) {
-		return new JarScanner(classLoader, resources);
+		return new JarScanner(classLoader, jar, resources);
 	    }
 	    else {
 		return null;

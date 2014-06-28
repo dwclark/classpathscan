@@ -1,5 +1,7 @@
 package classpath.scan;
 
+import java.io.InputStream;
+import java.io.IOException;
 import java.io.File;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -11,8 +13,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.objectweb.asm.tree.ClassNode;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import org.objectweb.asm.*;
 
 public class ClassScanner extends ResourceScanner {
+
+    private final Map<String,ClassNode> nodeCache;
 
     private static final Pattern PATTERN = Pattern.compile(".*\\.class$");
 
@@ -40,10 +48,33 @@ public class ClassScanner extends ResourceScanner {
     
     public ClassScanner(final ClassLoader classLoader, final String[] packages, final Pattern[] patterns) {
 	super(fixClassLoader(classLoader), fixPrefixes(packagesToPrefixes(packages)), fixPatterns(patterns, PATTERN));
+	this.nodeCache = Collections.unmodifiableMap(populateNodeCache());
     }
     
     private static String toClassName(final String resource) {
 	return resource.replace("/", ".").replace(File.separator, ".").replace(".class", "");
+    }
+
+    private Map<String,ClassNode> populateNodeCache() {
+	Map<String,ClassNode> tmp = new LinkedHashMap<>();
+	ProcessInputStream<ClassNode> processor = new ProcessInputStream<ClassNode>() {
+	    public ClassNode process(InputStream istream) {
+		try {
+		    ClassReader creader = new ClassReader(istream);
+		    ClassNode cnode = new ClassNode();
+		    creader.accept(cnode, 0);
+		    return cnode;
+		}
+		catch(IOException ioe) {
+		    throw new RuntimeException(ioe);
+		}
+	    } };
+
+	for(ElementScanner scanner : getScanners()) {
+	    tmp.putAll(scanner.withStream(processor));
+	}
+	
+	return tmp;
     }
 
     public <T> Set<T> findMatches(final ClassMatcher<T> matcher) {

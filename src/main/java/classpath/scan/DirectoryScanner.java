@@ -1,28 +1,34 @@
 package classpath.scan;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 public class DirectoryScanner extends ElementScanner {
     
-    final private List<String> resources;
-    
-    public List<String> getResources() {
-	return resources;
-    }
+    final private File directory;
 
-    final private ClassLoader classLoader;
-
-    public ClassLoader getClassLoader() {
-	return classLoader;
+    public <T> T withStream(String resource, ProcessInputStream<T> processor) {
+	File file = new File(directory, resource);
+	try(InputStream istream = new FileInputStream(file)) {
+	    return processor.process(istream);
+	}
+	catch(IOException ex) {
+	    throw new RuntimeException(ex);
+	}
     }
     
-    public DirectoryScanner(final ClassLoader classLoader, final List<String> resources) {
-	this.classLoader = classLoader;
-	this.resources = Collections.unmodifiableList(resources);
+    public DirectoryScanner(final ClassLoader classLoader, final File directory, final SortedSet<String> resources) {
+	super(classLoader, resources);
+	this.directory = directory;
     }
     
     private static String cleanResource(final File baseDirectory, final File classFile) {
@@ -43,7 +49,7 @@ public class DirectoryScanner extends ElementScanner {
 	}
     }
     
-    private static void process(final List<String> resources, final File baseDirectory, 
+    private static void process(final SortedSet<String> resources, final File baseDirectory, 
 				final File directory, final List<Pattern> patterns) {
 	for(File file : directory.listFiles()) {
 	    if(file.isFile()) {
@@ -60,7 +66,7 @@ public class DirectoryScanner extends ElementScanner {
     
     public static DirectoryScanner factory(final ClassLoader classLoader, final File directory, 
 					   final List<String> prefixes, final List<Pattern> patterns) {
-	List<String> resources = new ArrayList<>();
+	SortedSet<String> resources = new TreeSet<>();
 	if(prefixes != null && !prefixes.isEmpty()) {
 	    for(String prefix : prefixes) {
 		File subDir = new File(directory, prefix);
@@ -74,7 +80,7 @@ public class DirectoryScanner extends ElementScanner {
 	}
 	
 	if(!resources.isEmpty()) {
-	    return new DirectoryScanner(classLoader, resources);
+	    return new DirectoryScanner(classLoader, directory, resources);
 	}
 	else {
 	    return null;
