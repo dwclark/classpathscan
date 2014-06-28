@@ -188,14 +188,24 @@ public class ClassScanner extends ResourceScanner {
     }
 
     public Set<Class> findClassesAnnotatedWith(final Class<? extends Annotation> annotation) {
-	return findMatches(new ClassMatcher<Class>() {
-		public Set<Class> matches(Class<?> type) {
-		    if(type != null && type.isAnnotationPresent(annotation)) {
-			return Collections.<Class>singleton(type);
+	return findNodeMatches(new ClassNodeMatcher<Class>() {
+		@SuppressWarnings("unchecked")
+		public Set<Class> matches(ClassLoader classLoader, ClassNode node) {
+		    if(node.visibleAnnotations != null) {
+			for(AnnotationNode annotationNode : (List<AnnotationNode>) node.visibleAnnotations) {
+			    String cleaned = cleanDescription(annotationNode.desc);
+			    if(cleaned.equals(annotation.getName())) {
+				try {
+				    return Collections.<Class>singleton(Class.forName(cleanClass(node.name), false, classLoader));
+				}
+				catch(ClassNotFoundException ex) {
+				    throw new RuntimeException(ex);
+				}
+			    }
+			}
 		    }
-		    else {
-			return Collections.<Class>emptySet();
-		    }
+
+		    return Collections.<Class>emptySet();
 		} });
     }
 
