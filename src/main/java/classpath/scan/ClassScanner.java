@@ -13,10 +13,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-import org.objectweb.asm.tree.ClassNode;
 import java.util.Map;
 import java.util.LinkedHashMap;
-import org.objectweb.asm.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.MethodNode;
 
 public class ClassScanner extends ResourceScanner {
 
@@ -96,6 +99,17 @@ public class ClassScanner extends ResourceScanner {
 	}
     }
 
+    public <T> Set<T> findNodeMatches(final ClassNodeMatcher<T> matcher) {
+	Set<T> set = new HashSet<>();
+	for(ElementScanner scanner : getScanners()) {
+	    for(String resource : scanner.getResources()) {
+		set.addAll(matcher.matches(scanner.getClassLoader(), nodeCache.get(resource)));
+	    }
+	}
+
+	return set;
+    }
+
     private static <T> Set<T> addToSet(final Set<T> set, final T element) {
 	Set<T> ret = set;
 	if(ret == Collections.<T>emptySet()) {
@@ -106,21 +120,52 @@ public class ClassScanner extends ResourceScanner {
 	return ret;
     }
 
-    public Set<Method> findMethodsAnnotatedWith(final Class<? extends Annotation> annotation) {
-	return findMatches(new ClassMatcher<Method>() {
-		public Set<Method> matches(Class<?> type) {
-		    Set<Method> ret = Collections.<Method>emptySet();
-		    if(type == null) {
-			return ret;
-		    }
+    public static String cleanDescription(String str) {
+	return str.substring(1, str.length() - 1).replace('/', '.');
+    }
 
-		    for(Method method : type.getMethods()) {
-			if(method.isAnnotationPresent(annotation)) {
-			    ret = addToSet(ret, method);
+    public static String cleanClass(String str) {
+	return str.replace('/', '.');
+    }
+
+    public Set<Method> findMethodsAnnotatedWith(final Class<? extends Annotation> annotation) {
+	return findNodeMatches(new ClassNodeMatcher<Method>() {
+		@SuppressWarnings("unchecked")
+		public Set<Method> matches(ClassLoader classLoader, ClassNode node) {
+		    Set<Method> set = Collections.<Method>emptySet();
+		    if(node.methods != null) {
+			for(MethodNode methodNode : (List<MethodNode>) node.methods) {
+			    if(methodNode.visibleAnnotations != null) {
+				for(AnnotationNode annotationNode : (List<AnnotationNode>) methodNode.visibleAnnotations) {
+				    String cleaned = cleanDescription(annotationNode.desc);
+				    if(cleaned.equals(annotation.getName())) {
+					set = new HashSet<>();
+					break;
+				    }
+				    
+				    if(set != Collections.<Method>emptySet()) {
+					break;
+				    }
+				}
+			    }
+			}
+		    }
+		    
+		    if(set != Collections.<Method>emptySet()) {
+			try {
+			    Class type = Class.forName(cleanClass(node.name), false, classLoader);
+			    for(Method method : type.getMethods()) {
+				if(method.isAnnotationPresent(annotation)) {
+				    set.add(method);
+				}
+			    }
+			}
+			catch(ClassNotFoundException ex) {
+			    throw new RuntimeException(ex);
 			}
 		    }
 
-		    return ret;
+		    return set;
 		} });
     }
 
