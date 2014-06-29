@@ -2,6 +2,7 @@ package classpath.scan;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -11,7 +12,6 @@ import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
-import java.io.InputStream;
 
 public class JarScanner extends ElementScanner {
 

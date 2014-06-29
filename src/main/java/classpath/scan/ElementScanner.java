@@ -22,6 +22,10 @@ public abstract class ElementScanner {
 	return resources;
     }
 
+    public boolean has(String resource) {
+	return resources.contains(resource);
+    }
+
     public ClassLoader getClassLoader() {
 	return classLoader;
     }
