@@ -90,7 +90,7 @@ public class ClassScanner extends ResourceScanner {
 	    }
 	}
 
-	return set;
+	return Collections.unmodifiableSet(set);
     }
 
     private static <T> Set<T> addToSet(final Set<T> set, final T element) {
@@ -125,16 +125,14 @@ public class ClassScanner extends ResourceScanner {
 		@SuppressWarnings("unchecked")
 		public Set<Method> matches(ClassLoader classLoader, ClassNode node) {
 		    Set<Method> set = Collections.<Method>emptySet();
+
+		    methodNodeSearch:
 		    for(MethodNode methodNode : safe((List<MethodNode>) node.methods)) {
 			for(AnnotationNode annotationNode : safe((List<AnnotationNode>) methodNode.visibleAnnotations)) {
 			    String cleaned = cleanDescription(annotationNode.desc);
 			    if(cleaned.equals(annotation.getName())) {
 				set = new HashSet<>();
-				break;
-			    }
-			    
-			    if(set != Collections.<Method>emptySet()) {
-				break;
+				break methodNodeSearch;
 			    }
 			}
 		    }
@@ -157,21 +155,64 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
+    public Set<Method> findMethodsWithParameterAnnotation(final Class<? extends Annotation> annotation) {
+	return findNodeMatches(new ClassNodeMatcher<Method>() {
+		@SuppressWarnings("unchecked")
+		public Set<Method> matches(ClassLoader classLoader, ClassNode node) {
+		    Set<Method> set = Collections.<Method>emptySet();
+
+		    methodNodeSearch:
+		    for(MethodNode methodNode : safe((List<MethodNode>) node.methods)) {
+			if(methodNode.visibleParameterAnnotations != null) {
+			    for(List<AnnotationNode> annotationNodes : methodNode.visibleParameterAnnotations)  {
+				for(AnnotationNode annotationNode : safe(annotationNodes)) {
+				    String cleaned = cleanDescription(annotationNode.desc);
+				    if(cleaned.equals(annotation.getName())) {
+					set = new HashSet<>();
+					break methodNodeSearch;
+				    }
+				}
+			    }
+			}
+		    }
+
+		    if(set != Collections.<Method>emptySet()) {
+			try {
+			    Class theType = Class.forName(cleanClass(node.name), false, classLoader);
+			    for(Method method : theType.getMethods()) {
+				outerAnnotations:
+				for(Annotation[] outerAnnotations : method.getParameterAnnotations()) {
+				    for(Annotation innerAnnotation : outerAnnotations) {
+					if(innerAnnotation.annotationType() == annotation) {
+					    set.add(method);
+					    break outerAnnotations;
+					}
+				    }
+				}
+			    }
+			}
+			catch(ClassNotFoundException ex) {
+			    throw new RuntimeException(ex);
+			}
+		    }
+
+		    return set;
+		} });
+    }
+
     public Set<Field> findFieldsAnnotatedWith(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Field>() {
 		@SuppressWarnings("unchecked")
 		public Set<Field> matches(ClassLoader classLoader, ClassNode node) {
 		    Set<Field> set = Collections.emptySet();
+		
+		    fieldNodeSearch:
 		    for(FieldNode fieldNode : safe((List<FieldNode>) node.fields)) {
 			for(AnnotationNode annotationNode : safe((List<AnnotationNode>) fieldNode.visibleAnnotations)) {
 			    String cleaned = cleanDescription(annotationNode.desc);
 			    if(cleaned.equals(annotation.getName())) {
 				set = new HashSet<>();
-				break;
-			    }
-			    
-			    if(set != Collections.<Field>emptySet()) {
-				break;
+				break fieldNodeSearch;
 			    }
 			}
 		    }
@@ -194,7 +235,7 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
-    public Set<Class> findClassesAnnotatedWith(final Class<? extends Annotation> annotation) {
+    public Set<Class> findTypesAnnotatedWith(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Class>() {
 		@SuppressWarnings("unchecked")
 		public Set<Class> matches(ClassLoader classLoader, ClassNode node) {
@@ -252,7 +293,7 @@ public class ClassScanner extends ResourceScanner {
 	    nextTestFor.clear();
 	}
 	
-	return accum;
+	return Collections.unmodifiableSet(accum);
     }
 
     public Set<Class> findDirectlyImplements(final Class<?> type) {
@@ -284,6 +325,6 @@ public class ClassScanner extends ResourceScanner {
 	    accum.addAll(findSubTypesOf(findFor));
 	}
 
-	return accum;
+	return Collections.unmodifiableSet(accum);
     }
 }

@@ -135,7 +135,7 @@ public class ResourceScanner {
 	    }
 	}
 
-	return ret;
+	return Collections.unmodifiableSet(ret);
     }
     
     public Set<String> getAll() {

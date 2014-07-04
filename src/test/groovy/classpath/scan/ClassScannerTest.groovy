@@ -1,7 +1,6 @@
 package classpath.scan;
 
 import org.junit.*;
-import java.lang.reflect.Method;
 
 @Deprecated
 public class ClassScannerTest implements Cloneable {
@@ -17,21 +16,21 @@ public class ClassScannerTest implements Cloneable {
   }
 
   @Test
-  public void testElementScannerSubtypes() {
+  public void testFindDirectSubTypesOf() {
     ClassScanner scanner = new ClassScanner(classLoader, [ 'classpath.scan' ] as String[]);
     Set<Class> subs = scanner.findDirectSubTypesOf(ElementScanner);
     assert(subs.containsAll([ DirectoryScanner, JarScanner ]));
   }
 
   @Test
-  public void testMethodAnnotations() {
+  public void testFindMethodsAnnotatedWith() {
     ClassScanner scanner = new ClassScanner(classLoader, [ 'classpath.scan' ] as String[]);
-    Set<Method> methods = scanner.findMethodsAnnotatedWith(Before);
+    Set methods = scanner.findMethodsAnnotatedWith(Before);
     assert(methods.size() >= 1);
   }
 
   @Test
-  public void testFieldAnnotations() {
+  public void testFindFieldsAnnotatedWith() {
     ClassScanner scanner = new ClassScanner(classLoader, [ 'classpath.scan' ] as String[], ~/.*ClassScannerTest\.class$/)
     assert(scanner.scanners.size() == 1);
     ElementScanner elementScanner = scanner.scanners.iterator().next();
@@ -41,15 +40,15 @@ public class ClassScannerTest implements Cloneable {
   }
   
   @Test
-  public void testClassAnnotations() {
+  public void testFindTypesAnnotatedWith() {
     ClassScanner scanner = new ClassScanner(classLoader, 'classpath.scan')
-    Set<Class> set = scanner.findClassesAnnotatedWith(Deprecated);
+    Set<Class> set = scanner.findTypesAnnotatedWith(Deprecated);
     assert(set.size() == 1);
     assert(this.getClass() == set.iterator().next());
   }
 
   @Test
-  public void testDirectlyImplements() {
+  public void testFindDirectlyImplements() {
     ClassScanner scanner = new ClassScanner(classLoader, 'classpath.scan')
     Set<Class> set = scanner.findDirectlyImplements(Cloneable);
     assert(set.size() == 1);
@@ -57,7 +56,7 @@ public class ClassScannerTest implements Cloneable {
   }
 
   @Test
-  public void testImplements() {
+  public void testFindImplements() {
     ClassScanner scanner = new ClassScanner(classLoader, 'classpath.scan')
     Set<Class> set = scanner.findImplements(SimpleInterface);
     Set<Class> shouldBe = [ TestA, TestB, SubTestA, SubTestAA ] as Set;
@@ -66,12 +65,21 @@ public class ClassScannerTest implements Cloneable {
   }
 
   @Test
-  public void testSubTypesOf() {
+  public void testFindSubTypesOf() {
     ClassScanner scanner = new ClassScanner(classLoader, 'classpath.scan')
     Set<Class> set = scanner.findSubTypesOf(TestA);
     Set<Class> shouldBe = [ SubTestA, SubTestAA ] as Set;
     assert(set == shouldBe);
     println(set);
+  }
+
+  @Test
+  public void testFindMethodsWithParameterAnnotation() {
+    ClassScanner scanner = new ClassScanner(classLoader, 'classpath.scan');
+    Set methods = scanner.findMethodsWithParameterAnnotation(Deprecated);
+    assert(methods);
+    assert(methods.find { def method -> method.name == 'imBad' });
+    assert(!methods.find { def method -> method.name == 'imGood' });
   }
 }
 
@@ -85,3 +93,9 @@ class SubTestA extends TestA { }
 
 class SubTestAA extends SubTestA { }
 
+class IHaveDeprecatedMethodParameters {
+
+  public void imGood(String foo) { }
+
+  public void imBad(@Deprecated String foo) { }
+}
