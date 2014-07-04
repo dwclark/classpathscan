@@ -1,7 +1,7 @@
 package classpath.scan;
 
 import java.util.Set;
-import org.objectweb.asm.tree.ClassNode;
+import classpath.scan.jarjar.tree.ClassNode;
 
 public interface ClassNodeMatcher<T> {
     public Set<T> matches(ClassLoader classLoader, ClassNode node);

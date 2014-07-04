@@ -16,12 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.tree.AnnotationNode;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
-import org.objectweb.asm.tree.MethodNode;
+import classpath.scan.jarjar.ClassReader;
+import classpath.scan.jarjar.tree.AnnotationNode;
+import classpath.scan.jarjar.tree.ClassNode;
+import classpath.scan.jarjar.tree.FieldNode;
+import classpath.scan.jarjar.tree.MethodNode;
+import classpath.scan.jarjar.tree.MethodNode;
 
 public class ClassScanner extends ResourceScanner {
 

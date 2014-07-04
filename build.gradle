@@ -1,19 +1,71 @@
 apply plugin: 'java'
 apply plugin: 'groovy'
+apply plugin: 'maven'
 
-version = '0.1'
+version = '0.2'
 group = 'classpath.scan'
 
-dependencies {
-  testCompile 'junit:junit:4.11'
-  testCompile 'org.codehaus.groovy:groovy:2.3.3'
-  compile 'org.ow2.asm:asm-all:5.0.3'
+repositories {
+  mavenCentral()
 }
 
+//Make a new configuration to keep asm dependencies
+//separate from compile dependencies.
+configurations {
+  newasm
+}
+
+dependencies {
+
+  //put all asm dependencies here
+  newasm 'com.googlecode.jarjar:jarjar:1.3'
+  newasm 'org.ow2.asm:asm-all:5.0.3'
+
+  //don't depend on asm libraries directly, depend on our
+  //mangled jar to keep main asm package out of distributed jar
+  compile files('asmtmp/asm-mangled.jar')
+
+  testCompile 'junit:junit:4.11'
+  testCompile 'org.codehaus.groovy:groovy:2.3.3'
+}
+
+//define copyAsm and makeNewAsm to actually generate the jar
+//with the mangled package names. Also define cleanAsm to get
+//rid of temporary asm based jar files
+task copyAsm(type: Copy) {
+  into('asmtmp')
+  from(configurations.newasm)
+  exclude('jarjar*')
+  duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+}
+
+task makeNewAsm(dependsOn: copyAsm) << {
+  project.ant {
+    taskdef name: 'jarjar', classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.newasm.asPath
+    jarjar(jarfile: 'asmtmp/asm-mangled.jar', filesetmanifest: 'merge') {
+      zipfileset(src: 'asmtmp/asm-all-5.0.3.jar')
+      rule pattern: "org.objectweb.asm.**", result: "classpath.scan.jarjar.@1"
+    }
+  }
+}
+
+task cleanAsm(type: Delete) {
+  delete 'asmtmp'
+}
+
+//modify existing standard java plugin tasks
 tasks.withType(Compile) {
   options.compilerArgs << "-Xlint:unchecked"
 }
 
-repositories {
-  mavenCentral()
+clean.dependsOn(cleanAsm)
+
+compileJava.dependsOn(makeNewAsm)
+
+jar {
+  from {
+    configurations.compile.collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  }
 }
