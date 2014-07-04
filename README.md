@@ -10,11 +10,6 @@ This library exists to provide a small library dedicated to doing one thing well
 
 I had been happily using the  [Reflections Library](https://code.google.com/p/reflections/)  for some time.  However, my team has experienced conflicts due to Reflections' dependency on Google Guava.  There are many versions of Guava in use and there are binary incompatibilities between versions that have bit us many times.  Reflections also just stopped working one day when upgrading a project and I was never able to determine why.  This gave me the itch that was scratched in the form of the Classpath Scan Library.
 
-Limitations
------------
-
-The main limitation of the current library is that classes are loaded when scanned.  This means that the classes will stay loaded once you have scanned them.  However, the classes are not initialized.  In the future, I will hopefully implement class scanning using ASM to avoid this limitation.  For now, just limit the packages that you scan to the absolute minimum.  Resource scanning does not suffer from this problem.
-
 License
 -------
 
