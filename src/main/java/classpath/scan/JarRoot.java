@@ -13,7 +13,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
-public class JarScanner extends ElementScanner {
+public class JarRoot extends Root {
 
     private final JarFile jar;
 
@@ -27,7 +27,7 @@ public class JarScanner extends ElementScanner {
 	}
     }
 
-    public JarScanner(final ClassLoader classLoader, final JarFile jar, final SortedSet<String> resources) {
+    public JarRoot(final ClassLoader classLoader, final JarFile jar, final SortedSet<String> resources) {
 	super(classLoader, resources);
 	this.jar = jar;
     }
@@ -61,7 +61,7 @@ public class JarScanner extends ElementScanner {
 	return false;
     }
 
-    public static JarScanner factory(final ClassLoader classLoader, final File jarFile, 
+    public static JarRoot factory(final ClassLoader classLoader, final File jarFile, 
 				     final List<String> prefixes, final List<Pattern> patterns) {
 	try {
 	    JarFile jar = new JarFile(jarFile);
@@ -78,7 +78,7 @@ public class JarScanner extends ElementScanner {
 	    }
 	    
 	    if(!resources.isEmpty()) {
-		return new JarScanner(classLoader, jar, resources);
+		return new JarRoot(classLoader, jar, resources);
 	    }
 	    else {
 		return null;

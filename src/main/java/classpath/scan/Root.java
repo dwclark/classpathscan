@@ -8,12 +8,12 @@ import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public abstract class ElementScanner {
+public abstract class Root {
 
     private final ClassLoader classLoader;
     private final SortedSet<String> resources;
 
-    public ElementScanner(final ClassLoader classLoader, final SortedSet<String> resources) {
+    public Root(final ClassLoader classLoader, final SortedSet<String> resources) {
 	this.classLoader = classLoader;
 	this.resources = Collections.unmodifiableSortedSet(resources);
     }
@@ -36,7 +36,7 @@ public abstract class ElementScanner {
 	    return false;
 	}
 
-	ElementScanner that = (ElementScanner) obj;
+	Root that = (Root) obj;
 	return classLoader == that.classLoader && resources.equals(that.resources);
     }
 

@@ -75,8 +75,8 @@ public class ClassScanner extends ResourceScanner {
 		}
 	    } };
 
-	for(ElementScanner scanner : getScanners()) {
-	    tmp.putAll(scanner.withStream(processor));
+	for(Root root : getRoots()) {
+	    tmp.putAll(root.withStream(processor));
 	}
 	
 	return tmp;
@@ -84,23 +84,13 @@ public class ClassScanner extends ResourceScanner {
 
     public <T> Set<T> findNodeMatches(final ClassNodeMatcher<T> matcher) {
 	Set<T> set = new HashSet<>();
-	for(ElementScanner scanner : getScanners()) {
-	    for(String resource : scanner.getResources()) {
-		set.addAll(matcher.matches(scanner.getClassLoader(), nodeCache.get(resource)));
+	for(Root root : getRoots()) {
+	    for(String resource : root.getResources()) {
+		set.addAll(matcher.matches(root.getClassLoader(), nodeCache.get(resource)));
 	    }
 	}
 
 	return Collections.unmodifiableSet(set);
-    }
-
-    private static <T> Set<T> addToSet(final Set<T> set, final T element) {
-	Set<T> ret = set;
-	if(ret == Collections.<T>emptySet()) {
-	    ret = new HashSet<T>();
-	}
-
-	ret.add(element);
-	return ret;
     }
 
     public static String cleanDescription(String str) {
@@ -122,22 +112,24 @@ public class ClassScanner extends ResourceScanner {
 
     public Set<Method> findMethodsAnnotatedWith(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Method>() {
-		@SuppressWarnings("unchecked")
-		public Set<Method> matches(ClassLoader classLoader, ClassNode node) {
-		    Set<Method> set = Collections.<Method>emptySet();
 
-		    methodNodeSearch:
+		@SuppressWarnings("unchecked")
+		public boolean has(ClassNode node) {
 		    for(MethodNode methodNode : safe((List<MethodNode>) node.methods)) {
 			for(AnnotationNode annotationNode : safe((List<AnnotationNode>) methodNode.visibleAnnotations)) {
 			    String cleaned = cleanDescription(annotationNode.desc);
 			    if(cleaned.equals(annotation.getName())) {
-				set = new HashSet<>();
-				break methodNodeSearch;
+				return true;
 			    }
 			}
 		    }
-		    
-		    if(set != Collections.<Method>emptySet()) {
+
+		    return false;
+		}
+
+		public Set<Method> matches(ClassLoader classLoader, ClassNode node) {
+		    if(has(node)) {
+			Set<Method> set = new HashSet<>();
 			try {
 			    Class type = Class.forName(cleanClass(node.name), false, classLoader);
 			    for(Method method : type.getMethods()) {
@@ -145,38 +137,44 @@ public class ClassScanner extends ResourceScanner {
 				    set.add(method);
 				}
 			    }
+
+			    return set;
 			}
 			catch(ClassNotFoundException ex) {
 			    throw new RuntimeException(ex);
 			}
 		    }
-
-		    return set;
+		    else {
+			return Collections.<Method>emptySet();
+		    }
 		} });
     }
 
     public Set<Method> findMethodsWithParameterAnnotation(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Method>() {
-		@SuppressWarnings("unchecked")
-		public Set<Method> matches(ClassLoader classLoader, ClassNode node) {
-		    Set<Method> set = Collections.<Method>emptySet();
 
-		    methodNodeSearch:
+		@SuppressWarnings("unchecked")
+		public boolean has(ClassNode node) {
 		    for(MethodNode methodNode : safe((List<MethodNode>) node.methods)) {
 			if(methodNode.visibleParameterAnnotations != null) {
 			    for(List<AnnotationNode> annotationNodes : methodNode.visibleParameterAnnotations)  {
 				for(AnnotationNode annotationNode : safe(annotationNodes)) {
 				    String cleaned = cleanDescription(annotationNode.desc);
 				    if(cleaned.equals(annotation.getName())) {
-					set = new HashSet<>();
-					break methodNodeSearch;
+					return true;
 				    }
 				}
 			    }
 			}
 		    }
 
-		    if(set != Collections.<Method>emptySet()) {
+		    return false;
+		}
+
+		
+	        public Set<Method> matches(ClassLoader classLoader, ClassNode node) {
+		    if(has(node)) {
+			Set<Method> set = new HashSet<>();
 			try {
 			    Class theType = Class.forName(cleanClass(node.name), false, classLoader);
 			    for(Method method : theType.getMethods()) {
@@ -190,34 +188,39 @@ public class ClassScanner extends ResourceScanner {
 				    }
 				}
 			    }
+			    
+			    return set;
 			}
 			catch(ClassNotFoundException ex) {
 			    throw new RuntimeException(ex);
 			}
 		    }
-
-		    return set;
+		    else {
+			return Collections.<Method>emptySet();
+		    }
 		} });
     }
 
     public Set<Field> findFieldsAnnotatedWith(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Field>() {
+
 		@SuppressWarnings("unchecked")
-		public Set<Field> matches(ClassLoader classLoader, ClassNode node) {
-		    Set<Field> set = Collections.emptySet();
-		
-		    fieldNodeSearch:
+		public boolean has(ClassNode node) {
 		    for(FieldNode fieldNode : safe((List<FieldNode>) node.fields)) {
 			for(AnnotationNode annotationNode : safe((List<AnnotationNode>) fieldNode.visibleAnnotations)) {
 			    String cleaned = cleanDescription(annotationNode.desc);
 			    if(cleaned.equals(annotation.getName())) {
-				set = new HashSet<>();
-				break fieldNodeSearch;
+				return true;
 			    }
 			}
 		    }
+
+		    return false;
+		}
 		    
-		    if(set != Collections.<Field>emptySet()) {
+		public Set<Field> matches(ClassLoader classLoader, ClassNode node) {
+		    if(has(node)) {
+			Set<Field> set = new HashSet<>();
 			try {
 			    Class type = Class.forName(cleanClass(node.name), false, classLoader);
 			    for(Field field : type.getFields()) {
@@ -225,13 +228,16 @@ public class ClassScanner extends ResourceScanner {
 				    set.add(field);
 				}
 			    }
+			    
+			    return set;
 			}
 			catch(ClassNotFoundException ex) {
 			    throw new RuntimeException(ex);
 			}
 		    }
-
-		    return set;
+		    else {
+			return Collections.<Field>emptySet();
+		    }
 		} });
     }
 

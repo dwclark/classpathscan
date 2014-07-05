@@ -20,10 +20,10 @@ public class ResourceScanner {
 	return prefixes;
     }
 
-    final private List<ElementScanner> scanners;
+    final private List<Root> roots;
 
-    public List<ElementScanner> getScanners() {
-	return scanners;
+    public List<Root> getRoots() {
+	return roots;
     }
 
     final private List<Pattern> patterns;
@@ -88,10 +88,10 @@ public class ResourceScanner {
     protected ResourceScanner(final ClassLoader classLoader, final List<String> prefixes, final List<Pattern> patterns) {
 	this.prefixes = Collections.unmodifiableList(prefixes);
 	this.patterns = Collections.unmodifiableList(patterns);
-	this.scanners = Collections.unmodifiableList(findScanners(classLoader, new ArrayList<ElementScanner>()));
+	this.roots = Collections.unmodifiableList(findRoots(classLoader, new ArrayList<Root>()));
     }
 	
-    private List<ElementScanner> findScanners(final ClassLoader classLoader, final List<ElementScanner> result) {
+    private List<Root> findRoots(final ClassLoader classLoader, final List<Root> result) {
 	try {
 	    if(classLoader == null) {
 		return result;
@@ -103,22 +103,22 @@ public class ResourceScanner {
 		    if(url.getProtocol().equals("file")) {
 			File asFile = new File(url.toURI());
 			if(asFile.isDirectory()) {
-			    DirectoryScanner scanner = DirectoryScanner.factory(classLoader, asFile, prefixes, patterns);
-			    if(scanner != null) {
-				result.add(scanner);
+			    DirectoryRoot root = DirectoryRoot.factory(classLoader, asFile, prefixes, patterns);
+			    if(root != null) {
+				result.add(root);
 			    }
 			}
 			else if(asFile.getName().endsWith("jar")) {
-			    JarScanner scanner = JarScanner.factory(classLoader, asFile, prefixes, patterns);
-			    if(scanner != null) {
-				result.add(scanner);
+			    JarRoot root = JarRoot.factory(classLoader, asFile, prefixes, patterns);
+			    if(root != null) {
+				result.add(root);
 			    }
 			}
 		    }
 		}
 	    }
 
-	    return findScanners(classLoader.getParent(), result);
+	    return findRoots(classLoader.getParent(), result);
 	}
 	catch(URISyntaxException e) {
 	    throw new RuntimeException(e);
@@ -127,8 +127,8 @@ public class ResourceScanner {
 
     public Set<String> findMatches(final ResourceMatcher matcher) {
 	Set<String> ret = new HashSet<>();
-	for(ElementScanner scanner : scanners) {
-	    for(String resource : scanner.getResources()) {
+	for(Root root : roots) {
+	    for(String resource : root.getResources()) {
 		if(matcher.matches(resource)) {
 		    ret.add(resource);
 		}

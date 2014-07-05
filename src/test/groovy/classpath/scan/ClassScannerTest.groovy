@@ -18,8 +18,8 @@ public class ClassScannerTest implements Cloneable {
   @Test
   public void testFindDirectSubTypesOf() {
     ClassScanner scanner = new ClassScanner(classLoader, [ 'classpath.scan' ] as String[]);
-    Set<Class> subs = scanner.findDirectSubTypesOf(ElementScanner);
-    assert(subs.containsAll([ DirectoryScanner, JarScanner ]));
+    Set<Class> subs = scanner.findDirectSubTypesOf(Root);
+    assert(subs.containsAll([ DirectoryRoot, JarRoot ]));
   }
 
   @Test
@@ -32,9 +32,9 @@ public class ClassScannerTest implements Cloneable {
   @Test
   public void testFindFieldsAnnotatedWith() {
     ClassScanner scanner = new ClassScanner(classLoader, [ 'classpath.scan' ] as String[], ~/.*ClassScannerTest\.class$/)
-    assert(scanner.scanners.size() == 1);
-    ElementScanner elementScanner = scanner.scanners.iterator().next();
-    assert(elementScanner.resources.size() == 1);
+    assert(scanner.roots.size() == 1);
+    Root root = scanner.roots.iterator().next();
+    assert(root.resources.size() == 1);
     Set set = scanner.findFieldsAnnotatedWith(Deprecated);
     assert(set.size() == 1);
   }

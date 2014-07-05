@@ -12,7 +12,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
-public class DirectoryScanner extends ElementScanner {
+public class DirectoryRoot extends Root {
     
     final private File directory;
 
@@ -26,7 +26,7 @@ public class DirectoryScanner extends ElementScanner {
 	}
     }
     
-    public DirectoryScanner(final ClassLoader classLoader, final File directory, final SortedSet<String> resources) {
+    public DirectoryRoot(final ClassLoader classLoader, final File directory, final SortedSet<String> resources) {
 	super(classLoader, resources);
 	this.directory = directory;
     }
@@ -64,7 +64,7 @@ public class DirectoryScanner extends ElementScanner {
 	}
     }
     
-    public static DirectoryScanner factory(final ClassLoader classLoader, final File directory, 
+    public static DirectoryRoot factory(final ClassLoader classLoader, final File directory, 
 					   final List<String> prefixes, final List<Pattern> patterns) {
 	SortedSet<String> resources = new TreeSet<>();
 	if(prefixes != null && !prefixes.isEmpty()) {
@@ -80,7 +80,7 @@ public class DirectoryScanner extends ElementScanner {
 	}
 	
 	if(!resources.isEmpty()) {
-	    return new DirectoryScanner(classLoader, directory, resources);
+	    return new DirectoryRoot(classLoader, directory, resources);
 	}
 	else {
 	    return null;
