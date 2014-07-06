@@ -2,7 +2,7 @@ apply plugin: 'java'
 apply plugin: 'groovy'
 apply plugin: 'maven'
 
-version = '0.2'
+version = '0.3'
 group = 'classpath.scan'
 
 repositories {
@@ -39,12 +39,17 @@ task copyAsm(type: Copy) {
   duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
 }
 
-task makeNewAsm(dependsOn: copyAsm) << {
-  project.ant {
-    taskdef name: 'jarjar', classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.newasm.asPath
-    jarjar(jarfile: 'asmtmp/asm-mangled.jar', filesetmanifest: 'merge') {
-      zipfileset(src: 'asmtmp/asm-all-5.0.3.jar')
-      rule pattern: "org.objectweb.asm.**", result: "classpath.scan.jarjar.@1"
+task makeNewAsm(dependsOn: copyAsm) {
+  //inputs.file('asmtmp/asm-all-5.0.3.jar')
+  outputs.file('asmtmp/asm-mangled.jar')
+
+  doLast {
+    project.ant {
+      taskdef name: 'jarjar', classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.newasm.asPath
+      jarjar(jarfile: 'asmtmp/asm-mangled.jar', filesetmanifest: 'merge') {
+	zipfileset(src: 'asmtmp/asm-all-5.0.3.jar')
+	rule pattern: "org.objectweb.asm.**", result: "classpath.scan.jarjar.@1"
+      }
     }
   }
 }
@@ -68,4 +73,11 @@ jar {
       it.isDirectory() ? it : zipTree(it)
     }
   }
+}
+
+javadoc {
+  project.configure(options) {
+        windowTitle = "Classpath Scan API"
+        links('http://docs.oracle.com/javase/7/docs/api/')
+    }
 }

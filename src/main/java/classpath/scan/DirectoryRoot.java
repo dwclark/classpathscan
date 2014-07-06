@@ -12,6 +12,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 
+/**
+ * <code>Root</code> implementation for managing directories. Internal to Classpath Scan.
+ */
 public class DirectoryRoot extends Root {
     
     final private File directory;

@@ -43,14 +43,35 @@ public class ClassScanner extends ResourceScanner {
 	}
     }
 
+    /**
+     * Makes all classes available to classLoader available for scanning.
+     * Equivalent to calling <code>ClassScanner(classLoader, null, null)</code>
+     *
+     * @param classLoader The classloader to use for scanning for classes.
+     */
     public ClassScanner(final ClassLoader classLoader) {
 	this(classLoader, null, null);
     }
     
+     /**
+     * Makes all classes available to classLoader available for scanning in the passed packages
+     * Equivalent to calling <code>ClassScanner(classLoader, packages, null)</code>
+     *
+     * @param classLoader The classloader to use for scanning for classes.
+     * @param packages Only classes in these packages will be made available to the <code>ClassScanner</code>
+     */
     public ClassScanner(final ClassLoader classLoader, final String[] packages) {
 	this(classLoader, packages, null);
     }
     
+    /**
+     * Makes all classes available to classLoader available for scanning in the passed packages
+     * which match the passed patterns.
+     *
+     * @param classLoader The classloader to use for scanning for classes.
+     * @param packages Only classes in these packages will be made available to the <code>ClassScanner</code>
+     * @param patterns Only classes that match these patters will be made available to the <code>ClassScanner</code>
+     */
     public ClassScanner(final ClassLoader classLoader, final String[] packages, final Pattern[] patterns) {
 	super(fixClassLoader(classLoader), fixPrefixes(packagesToPrefixes(packages)), fixPatterns(patterns, PATTERN));
 	this.nodeCache = Collections.unmodifiableMap(populateNodeCache());
@@ -82,6 +103,12 @@ public class ClassScanner extends ResourceScanner {
 	return tmp;
     }
 
+    /**
+     * Generic method used to implement more specific finder methods in this class
+     *
+     * @param matcher The Class Node Matcher used to locate things of interest
+     * @return The set of things that were found by the matcher
+     */
     public <T> Set<T> findNodeMatches(final ClassNodeMatcher<T> matcher) {
 	Set<T> set = new HashSet<>();
 	for(Root root : getRoots()) {
@@ -93,14 +120,23 @@ public class ClassScanner extends ResourceScanner {
 	return Collections.unmodifiableSet(set);
     }
 
+    /**
+     * Utility method used for interoperability with ASM
+     */
     public static String cleanDescription(String str) {
 	return str.substring(1, str.length() - 1).replace('/', '.');
     }
 
+    /**
+     * Utility method used for interoperability with ASM
+     */
     public static String cleanClass(String str) {
 	return str.replace('/', '.');
     }
 
+    /**
+     * Utility method used for interoperability with ASM
+     */
     public static <T> Collection<T> safe(Collection<T> col) {
 	if(col == null) {
 	    return Collections.<T>emptyList();
@@ -110,6 +146,11 @@ public class ClassScanner extends ResourceScanner {
 	}
     }
 
+    /**
+     * Used to locate methods annotated with a given annotation
+     * @param annotation The annotation to look for
+     * @return The <code>Method</code>s found with the given annotation
+     */
     public Set<Method> findMethodsAnnotatedWith(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Method>() {
 
@@ -150,6 +191,11 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
+    /**
+     * Used to locate methods with parameters annotated with a given annotation
+     * @param annotation The annotation to look for on the parameters
+     * @return The <code>Method</code>s found with parameters annotated with the specified annotation
+     */
     public Set<Method> findMethodsWithParameterAnnotation(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Method>() {
 
@@ -201,6 +247,11 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
+    /**
+     * Used to locate fields annotated with a given annotation
+     * @param annotation The annotation to look for
+     * @return The <code>Field</code>s found with the given annotation
+     */
     public Set<Field> findFieldsAnnotatedWith(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Field>() {
 
@@ -241,6 +292,11 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
+    /**
+     * Used to locate classes annotated with a given annotation
+     * @param annotation The annotation to look for
+     * @return The <code>Class</code>s found with the given annotation
+     */
     public Set<Class> findTypesAnnotatedWith(final Class<? extends Annotation> annotation) {
 	return findNodeMatches(new ClassNodeMatcher<Class>() {
 		@SuppressWarnings("unchecked")
@@ -261,6 +317,11 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
+    /**
+     * Used to locate classes that are direct subtypes of the given type
+     * @param type The super type of the classes you are looking for
+     * @return The <code>Classes</code>s found with that are subtypes of <code>type</code>
+     */
     public Set<Class> findDirectSubTypesOf(final Class<?> type) {
 	return findNodeMatches(new ClassNodeMatcher<Class>() {
 		@SuppressWarnings("unchecked")
@@ -279,6 +340,13 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
+    /**
+     * Used to locate classes that are subtypes of the given type. Similar to
+     * <code>findDirectSubTypesOf</code>, but will also recursively search for
+     * all descendant classes as well.
+     * @param type The super type of the classes you are looking for
+     * @return The <code>Classes</code>s found with that are subtypes of <code>type</code>
+     */
     public Set<Class> findSubTypesOf(final Class<?> type) {
 	Set<Class> initial = findDirectSubTypesOf(type);
 	if(initial.isEmpty()) {
@@ -302,6 +370,11 @@ public class ClassScanner extends ResourceScanner {
 	return Collections.unmodifiableSet(accum);
     }
 
+    /**
+     * Used to locate classes that directly implement a given interface
+     * @param type The interface the classes you are looking for implement
+     * @return The <code>Classes</code>s found with that directly implement <code>type</code>
+     */
     public Set<Class> findDirectlyImplements(final Class<?> type) {
 	return findNodeMatches(new ClassNodeMatcher<Class>() {
 		@SuppressWarnings("unchecked")
@@ -320,6 +393,11 @@ public class ClassScanner extends ResourceScanner {
 		} });
     }
 
+    /**
+     * Used to locate classes that implement a given interface
+     * @param type The interface the classes you are looking for implement
+     * @return The <code>Classes</code>s found with that implement <code>type</code>, either directly or through one of their ancestors
+     */
     public Set<Class> findImplements(final Class<?> type) {
 	Set<Class> initial = findDirectlyImplements(type);
 	if(initial.isEmpty()) {

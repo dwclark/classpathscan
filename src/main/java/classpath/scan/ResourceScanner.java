@@ -208,6 +208,12 @@ public class ResourceScanner {
 	}
     }
 
+    /**
+     * Returns all resources for which the matcher object returns <code>true</code>.
+     * 
+     * @param matcher The matcher object which decides if the resource is to be included in the result
+     * @return A set of all matched resources.
+     */
     public Set<String> findMatches(final ResourceMatcher matcher) {
 	Set<String> ret = new HashSet<>();
 	for(Root root : roots) {
@@ -220,7 +226,13 @@ public class ResourceScanner {
 
 	return Collections.unmodifiableSet(ret);
     }
-    
+
+    /**
+     * Returns all of the scanners resources.  Equivalent to calling <code>findMatches</code>
+     * with a <code>ResourceMatcher</code> that always returns true.
+     *
+     * @return All resources in this scanner
+     */
     public Set<String> getAll() {
 	return findMatches(new ResourceMatcher() {
 		public boolean matches(String resource) {
@@ -228,6 +240,14 @@ public class ResourceScanner {
 		} });
     }
 
+    /**
+     * Returns all resources that match <code>pattern</code>. Equivalent to calling
+     * <code>findMatches</code> with a <code>ResourceMatcher</code> that simply
+     * constructs a matcher and then calls <code>matches()</code> for each resource.
+     *
+     * @param pattern The pattern against which to try and match a resource
+     * @return A set of all matched resources
+     */
     public Set<String> findMatches(final Pattern pattern) {
 	return findMatches(new ResourceMatcher() {
 		public boolean matches(String resource) {

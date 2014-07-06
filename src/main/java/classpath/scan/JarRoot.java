@@ -13,6 +13,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
 
+/**
+ * <code>Root</code> implementation for managing jar files. Internal to Classpath Scan.
+ */
 public class JarRoot extends Root {
 
     private final JarFile jar;

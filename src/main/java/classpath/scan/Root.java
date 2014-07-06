@@ -8,6 +8,10 @@ import java.util.SortedSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Used internally by Classpath Scan to abstract different root types.
+ * Classpath Scan has <code>Root</code> implementations for jars and directories.
+ */
 public abstract class Root {
 
     private final ClassLoader classLoader;
